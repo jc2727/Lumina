@@ -192,4 +192,51 @@ def validate_model(model, x_train,y_train):
     return  metrics
 
 
+def select_model(x_train, y_train):
+
+    model_names = ['linear_regression', 'lasso', 'random_forest', 'xg_boost']
+
+    numeric_columns = x_train.select_dtypes(include=['number']).columns
+    categorical_columns = x_train.select_dtypes(include=['object', 'category']).columns
+
+    results = {}
+
+    for model_name in model_names:
+        model = create_model( numeric_columns, categorical_columns, model_name)
+        metrics = validate_model(model, x_train, y_train)
+        results[model_name] = {'model': model, 'metrics': metrics}
     
+    best_model_name = min(results, key=lambda x: results[x]['metrics']['rmse'])
+    return results[best_model_name], results
+
+
+def evaluate_model (model, x_test,y_test):
+    """
+    Esta funcion evalua un modelo de machine learning utilizando datos de test.
+
+    Parametros:
+    model: Modelo Entrenado encontrado en la función best model
+    x_test: DataFrame con las características de test
+    y_test: Serie con la variable objetivo de test
+
+    Retorna:
+    metrics: resultado de métricas de evaluación en el conjunto de test
+
+    """
+    from sklearn.metrics import mean_absolute_error, root_mean_squared_error, r2_score, mean_absolute_percentage_error
+
+    y_pred = model.predict(x_test)
+
+    mae = mean_absolute_error(y_test, y_pred)
+    rmse = root_mean_squared_error(y_test, y_pred)
+    mape = mean_absolute_percentage_error(y_test, y_pred)*100
+    r2 = r2_score(y_test, y_pred)
+
+    metrics = {
+        'mae': mae,
+        'rmse': rmse,
+        'mape': mape,
+        'r2': r2
+    }
+
+    return metrics
